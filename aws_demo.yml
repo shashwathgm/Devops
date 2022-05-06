@@ -1,0 +1,25 @@
+#!/home/ec2-user/.local/bin/ansible-playbook
+
+---
+  - name: My vpc demo
+    hosts: localhost
+    connection: local
+    gather_facts: False
+    remote_user: ec2-user
+    become: yes
+    tasks:
+      - name: create was key pairs
+        ec2_key: 
+            name: example_demo2
+            state: present 
+            ec2_region: ap-south-1
+        register: ec2_key_pair
+      - debug:
+          var: ec2_key_pair
+      - name: store the private_key
+        copy:
+          content: "{{ec2_key_pair.key.id}}"
+          dest: ./sample-key.txt
+        when: "{{ec2_key_pair.changed}} == true"
+            
+

@@ -1,0 +1,44 @@
+#!/home/ec2-user/.local/bin/ansible-playbook
+
+
+
+---
+  - name : shell program
+    hosts : all
+    remote_user: ec2-user
+    become : yes
+    vars:
+      packages: [ "wget", "curl", "unzip" ]
+    vars_prompt : 
+      - name : x
+        prompt : enter the value of x
+        private : no
+      - name : y
+        prompt : enter the value of y
+        private : no
+    tasks:
+      - name : shell task
+        become : yes
+        async : 10
+        delay : 0
+        delay : 10
+        shell: |
+           echo -e "change tomcat directory"
+           mkdir /tmp/tomcat
+           cd /tmp/tomcat
+      - name: Install httpd
+        yum:
+          name: "{{packages}}"
+          state: latest
+      - service:
+          name: httpd
+          state: stopped
+      - shell: echo the current date is - `date`
+        register : shell_output
+        
+      - debug: 
+          msg: 
+            - the ip address is - {{inventory_hostname}}
+            - the current date is - {{shell_output.stdout_lines[0].split()[6]}}
+            - the answer of x & y is {{x|int * y|int}}
+          

@@ -1,0 +1,56 @@
+#!/home/ec2-user/.local/bin/ansible-playbook
+
+
+---
+
+  - name : ansible-playbook
+    hosts : all
+    remote_user : ec2-user
+    become : yes
+    tasks:
+       - name: create /opt/tomcat directory
+         file:
+            path: /opt/tomcat
+            state: directory
+            mode: 0755
+
+       - name: download & unarchive
+         get_url : 
+            url : https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.62/bin/apache-tomcat-9.0.62.tar.gz
+            dest: /opt/tomcat       
+  
+       - unarchive:
+            src: /opt/tomcat/apache-tomcat-9.0.62.tar.gz 
+            dest: /opt/tomcat
+            remote_src: yes
+            
+       
+
+       - command: chown -R ec2-user:ec2-user /opt/tomcat/tomcat1
+
+       
+
+       - shell: nohup /opt/tomcat/tomcat1/bin/startup.sh
+       - name: install dependencies
+         yum:
+           name: python3-pip
+           state: present
+           
+       - name: install boto3
+         pip:
+           name: "{{ item }}"
+           state: present
+         loop:
+           - boto3
+
+       - name: Simple GET operation
+         amazon.aws.aws_s3:
+           bucket: newbucketforansible
+           object: webapp/target/webapp.war
+           dest: /opt/tomcat/tomcat1/webapps/webapp.war
+           mode: get 
+
+
+       - name: start tomcat
+         shell : /opt/tomcat/tomcat1/bin/startup.sh
+

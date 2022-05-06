@@ -1,0 +1,11 @@
+---
+- name: Introduction to playbook
+  hosts: all
+  become: 'yes'
+  gather_facts: false 
+  
+  tasks:
+    - name: ping the module
+      action: ping
+
+
