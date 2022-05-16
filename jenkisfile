@@ -1,0 +1,81 @@
+pipeline{
+    agent any
+    tools{
+        maven "Maven"
+        jdk "jdk1"
+        
+    }
+    environment{
+        build=true
+        unit=false
+        integration=false
+        nexus=false
+        scode=false
+        
+    }
+   
+    
+    stages{
+        stage("checkout from git"){
+            
+            steps{
+                git branch: 'ci-jenkins', url: 'https://github.com/shashwathgm/Devops.git'
+                
+            }
+        
+        }
+        stage("build"){
+            when { expression {"${build}"=="true"}}
+            steps{
+                configFileProvider([configFile(fileId: 'ebc8745e-2ba9-4f19-9f0d-9c2ec1746665', variable: 'MySettings')]){
+                sh 'mvn -s $MySettings clean install -DskipTest'
+                }
+            }
+        }
+        stage("unit-test"){
+            when { expression {"${unit}"=="true"}}
+            steps{
+                sh 'mvn test'
+            }
+        }
+        stage("integration-test"){
+            when { expression {"${integration}"=="true"}}
+            steps{
+                sh 'mvn verify -DskipUnitTests'
+            }
+        }
+        stage("static-code-analysis"){
+            when { expression {"${scode}"=="true"}}
+            steps{
+                sh 'mvn checkstyle:checkstyle'
+            }
+            
+        }
+        stage('upload-to artifact'){
+            when { expression {"${nexus}"=="true"}}
+            steps{
+                script{
+                    pom=readMavenPom file: "pom.xml";
+                    filetofind=findFiles(glob: "**/target/*.${pom.packaging}");
+                    filepath=filetofind[0].path;
+                    fileexists=fileExists filepath;
+                    echo "the file found is : ${filepath}"
+                    echo "the file exits : ${filetofind[0].name}"
+                    nexusArtifactUploader artifacts: [[artifactId: 'Vlatest', classifier: '',
+                    file: filepath,
+                    type: 'war']],
+                    credentialsId: 'nexus',
+                    groupId: 'QA_testing',
+                    nexusUrl: '172.31.1.164:8081', 
+                    nexusVersion: 'nexus3', 
+                    protocol: 'http', 
+                    repository: 'nexus_release1', version: '1-$BUILD_ID'
+                            
+                        
+
+                }
+            }
+        
+        }
+    }
+}
